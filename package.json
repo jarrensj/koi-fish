@@ -5,22 +5,7 @@
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
-    "wallet:check": "tsx src/swap/wallet-check.ts",
-    "wallet:balance": "tsx src/swap/wallet-balance.ts",
-    "price:track": "tsx src/swap/price-check.ts",
-    "trade:buy": "tsx src/swap/trade-buy.ts",
-    "trade:trim": "tsx src/swap/trade-trim.ts",
-    "trade:auto": "tsx src/swap/trade-auto.ts",
-    "trade:loop": "tsx src/swap/trade-loop.ts",
-    "algo:scalper40s": "tsx src/algo/scalper_40s.ts",
-    "algo:scalperRebuy40s": "tsx src/algo/scalper_rebuy_40s.ts",
-    "check:token": "tsx src/swap/check-token.ts",
-    "registry:validate": "tsx scripts/validate-registry.ts",
-    "registry:validate:online": "tsx scripts/validate-registry.ts --online",
-
-    "algo:loop40s": "tsx src/algo/loop_swap_40s.ts",
-
-    "start": "tsx src/server.ts",
+    "start": "tsx src/server/server.ts",
     "build": "tsc",
     "type-check": "tsc --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -28,31 +13,19 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "@types/bs58": "^5.0.0",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.3",
-    "@types/node": "^24.7.0",
-    "@types/nodemailer": "^7.0.2",
-    "dotenv-cli": "^10.0.0",
-    "ts-node": "^10.9.2",
-    "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
-  },
   "dependencies": {
-    "@solana/spl-token": "^0.4.14",
     "@solana/web3.js": "^1.98.4",
     "bs58": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
-    "ethers": "^6.15.0",
     "express": "^5.1.0",
-    "input": "^1.0.1",
-    "node-fetch": "^3.3.2",
-    "nodemailer": "^7.0.9",
-    "p-limit": "^4.0.0",
-    "telegram": "^2.26.22",
-    "tweetnacl": "^1.0.3",
-    "twilio": "^5.10.2"
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.7.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
   }
 }
