@@ -5,7 +5,4 @@ const router = Router();
 
 router.use(tradeBuy);
 
-
-
-
 export default router;

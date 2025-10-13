@@ -1,8 +1,6 @@
 /**
  * Purpose:
- * - Jupiter client for the first PR: only SOL → token swaps.
- * - Keeps a modular 3-step flow (getQuote → buildSwapTx → sendSwap) so
- *   you can easily add sell/other routes later without rewriting.
+ * - Keeps a modular 3-step flow (getQuote → buildSwapTx → sendSwap)
  */
 
 import fetch from "node-fetch";
@@ -17,9 +15,35 @@ import {
 /** Local WSOL mint (keep self-contained to avoid cross-module coupling). */
 const WSOL_MINT = "So11111111111111111111111111111111111111112";
 
-const JUP_API_BASE_URL = process.env.JUP_API_BASE_URL || "https://lite-api.jup.ag";
-const JUP_QUOTE = process.env.JUP_QUOTE_URL || `${JUP_API_BASE_URL}/swap/v1/quote`;
-const JUP_SWAP  = process.env.JUP_SWAP_URL  || `${JUP_API_BASE_URL}/swap/v1/swap`;
+//  Jupiter endpoint config (warn in dev, fail in prod if missing) 
+function resolveJupiterEndpoints() {
+  const JUP_API_BASE_URL = (process.env.JUP_API_BASE_URL || "https://lite-api.jup.ag").trim();
+  const JUP_QUOTE = (process.env.JUP_QUOTE_URL || `${JUP_API_BASE_URL}/swap/v1/quote`).trim();
+  const JUP_SWAP  = (process.env.JUP_SWAP_URL  || `${JUP_API_BASE_URL}/swap/v1/swap`).trim();
+
+  const isProd = (process.env.NODE_ENV || "").toLowerCase() === "production";
+  const usingDefaults = !process.env.JUP_QUOTE_URL || !process.env.JUP_SWAP_URL;
+
+  if (isProd && usingDefaults) {
+    // In production, force explicit config to avoid accidental wrong hosts.
+    throw new Error(
+      "JUP_QUOTE_URL and JUP_SWAP_URL are required in production. " +
+      "Set them in your environment."
+    );
+  }
+
+  if (!isProd && usingDefaults) {
+    console.warn(
+      "[jupiter] Using default lite endpoints. " +
+      "Set JUP_QUOTE_URL/JUP_SWAP_URL to override."
+    );
+  }
+
+  return { JUP_QUOTE, JUP_SWAP };
+}
+
+const { JUP_QUOTE: JUP_QUOTE, JUP_SWAP: JUP_SWAP } = resolveJupiterEndpoints();
+
 
 /** Subset of fields we actually read from the quote response. */
 export type JupQuote = {

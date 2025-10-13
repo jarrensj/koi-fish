@@ -2,13 +2,7 @@
  * Purpose:
  * - Provide a shared Solana RPC Connection (singleton).
  * - Load a wallet Keypair from environment variables.
- *
- * Used by:
- * - controllers/trade.controller.ts → to get a Connection and Keypair.
  */
-
-import dns from "dns";
-dns.setDefaultResultOrder?.("ipv4first");
 
 import { Connection, Keypair } from "@solana/web3.js";
 import bs58 from "bs58";

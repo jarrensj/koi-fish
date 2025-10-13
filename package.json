@@ -6,6 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/server/server.ts",
+    "dev": "ts-node src/server.ts",
+    "watch": "nodemon --exec ts-node src/server/server.ts",
     "build": "tsc",
     "type-check": "tsc --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1"
