@@ -5,7 +5,7 @@ import { buyWithSol } from "../../lib/jupiter.ts";
 
 export const postBuy = async (req: Request, res: Response) => {
   try {
-    const { mint, amountSol, dryRun } = req.body ?? {};
+    const { mint, amountSol } = req.body ?? {};
     if (!mint || !amountSol) return res.status(400).json({ ok: false, error: "mint, amountSol required" });
 
     // Validate inputs
@@ -14,9 +14,6 @@ export const postBuy = async (req: Request, res: Response) => {
     if (!Number.isFinite(SOL) || SOL <= 0) return res.status(400).json({ ok: false, error: "amountSol must be > 0" });
 
     // Env-driven knobs
-    const DRY = typeof dryRun === "boolean"
-      ? dryRun
-      : String(process.env.DRY_RUN || "true").toLowerCase() === "true";
     const slippageBps = Number(process.env.SLIPPAGE_BPS || 100);
     const priorityMicrolamports = Number(process.env.PRIORITY_FEE_MICROLAMPORTS || 0);
 
@@ -25,17 +22,15 @@ export const postBuy = async (req: Request, res: Response) => {
     const wallet = loadKeypair();
 
     // Swap
-    const { sig, quote } = await buyWithSol(conn, wallet, mint, SOL, slippageBps, priorityMicrolamports, DRY);
+    const { sig, quote } = await buyWithSol(conn, wallet, mint, SOL, slippageBps, priorityMicrolamports);
     const outDecimals = typeof quote.outputMintDecimals === "number" ? quote.outputMintDecimals : 6;
     const estOut = Number(quote.outAmount) / 10 ** outDecimals;
 
     return res.json({
       ok: true,
       tx: sig,
-    //   explorer: sig ? explorerUrl(sig, conn.rpcEndpoint) : null,
-    //   solscan: sig ? solscanUrl(sig, conn.rpcEndpoint) : null,
+
       estOut,
-      dryRun: DRY
     });
   } catch (e: any) {
     return res.status(400).json({ ok: false, error: e?.message || String(e) });

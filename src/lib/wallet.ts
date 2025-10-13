@@ -5,10 +5,6 @@
  *
  * Used by:
  * - controllers/trade.controller.ts → to get a Connection and Keypair.
- *
- * Env:
- * - SOLANA_RPC_URL (required for production)
- * - WALLET_SECRET_KEY_BASE58  OR  WALLET_SECRET_KEY_JSON (exactly one)
  */
 
 import dns from "dns";
@@ -19,13 +15,6 @@ import bs58 from "bs58";
 
 let _conn: Connection | null = null;
 
-/**
- * getConnection
- * Returns a shared Connection instance.
- * - If rpcUrl is provided (e.g., in tests), a new Connection is created.
- * - Otherwise, memoizes a singleton using SOLANA_RPC_URL.
- * Throws if SOLANA_RPC_URL is missing.
- */
 export function getConnection(rpcUrl?: string): Connection {
   if (rpcUrl) return new Connection(rpcUrl, "confirmed");
   if (_conn) return _conn;
@@ -37,13 +26,6 @@ export function getConnection(rpcUrl?: string): Connection {
   return _conn;
 }
 
-/**
- * loadKeypair
- * Loads a Keypair from environment:
- * - WALLET_SECRET_KEY_BASE58: Phantom/Brave export (base58, 64 bytes)
- * - WALLET_SECRET_KEY_JSON  : 64-number JSON array (from solana-keygen)
- * Throws if neither is set or if the length is invalid.
- */
 export function loadKeypair(): Keypair {
   const b58 = process.env.WALLET_SECRET_KEY_BASE58?.trim();
   const json = process.env.WALLET_SECRET_KEY_JSON?.trim();

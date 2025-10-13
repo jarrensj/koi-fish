@@ -3,13 +3,6 @@
  * - Jupiter client for the first PR: only SOL → token swaps.
  * - Keeps a modular 3-step flow (getQuote → buildSwapTx → sendSwap) so
  *   you can easily add sell/other routes later without rewriting.
-
- * Used by:
- * - controllers/trade.controller.ts → calls buyWithSol(...)
- *
- * Env (optional overrides):
- * - JUP_API_BASE_URL (defaults to https://lite-api.jup.ag)
- * - JUP_QUOTE_URL, JUP_SWAP_URL (override the base if needed)
  */
 
 import fetch from "node-fetch";
@@ -24,7 +17,6 @@ import {
 /** Local WSOL mint (keep self-contained to avoid cross-module coupling). */
 const WSOL_MINT = "So11111111111111111111111111111111111111112";
 
-/** Prefer lite endpoints (fewer DNS hiccups) */
 const JUP_API_BASE_URL = process.env.JUP_API_BASE_URL || "https://lite-api.jup.ag";
 const JUP_QUOTE = process.env.JUP_QUOTE_URL || `${JUP_API_BASE_URL}/swap/v1/quote`;
 const JUP_SWAP  = process.env.JUP_SWAP_URL  || `${JUP_API_BASE_URL}/swap/v1/swap`;
@@ -90,8 +82,7 @@ export async function buildSwapTx(
   if (priorityFeeMicrolamports > 0) {
     body.dynamicComputeUnitLimit = true;
     body.computeUnitPriceMicroLamports = priorityFeeMicrolamports;
-    // Alternative (another supported shape in some API versions):
-    // body.prioritizationFeeLamports = { priorityFeeLamports: String(priorityFeeMicrolamports) };
+
   }
 
   const res = await fetch(JUP_SWAP, {
@@ -107,21 +98,18 @@ export async function buildSwapTx(
 
 /**
  * sendSwap
- * Sign the built transaction with the given wallet and (unless dryRun) send it.
+ * Sign the built transaction with the given wallet and send it.
  * @param conn     Solana connection
  * @param tx       VersionedTransaction returned by buildSwapTx
  * @param wallet   Keypair that will sign
- * @param opts     { dryRun?: boolean } — if true, do not broadcast
- * @returns        signature string, or null when dryRun=true
+ * @returns        signature string
  */
 export async function sendSwap(
   conn: Connection,
   tx: VersionedTransaction,
   wallet: Keypair,
-  { dryRun = true }: { dryRun?: boolean } = {}
 ): Promise<string | null> {
   tx.sign([wallet]);
-  if (dryRun) return null;
 
   const sig = await conn.sendRawTransaction(tx.serialize(), {
     skipPreflight: false,
@@ -144,7 +132,6 @@ export async function buyWithSol(
   amountSol: number,
   slippageBps: number,
   priorityFeeMicrolamports: number,
-  dryRun: boolean
 ): Promise<{ tx: VersionedTransaction; sig: string | null; quote: JupQuote }> {
   const lamports = BigInt(Math.floor(amountSol * LAMPORTS_PER_SOL));
   const quote = await getQuote(WSOL_MINT, outputMint, lamports, slippageBps);
@@ -154,6 +141,6 @@ export async function buyWithSol(
   }
 
   const tx = await buildSwapTx(quote, wallet.publicKey, priorityFeeMicrolamports);
-  const sig = await sendSwap(conn, tx, wallet, { dryRun });
+  const sig = await sendSwap(conn, tx, wallet);
   return { tx, sig, quote };
 }
