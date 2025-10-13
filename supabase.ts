@@ -67,6 +67,21 @@ export const saveWallet = async (
 
 
 // Check if a user is the owner or a member of a team
+// Check if a team already has a wallet
+export const checkTeamWallet = async (teamName: string): Promise<Team | null> => {
+  const { data: team, error } = await supabase
+    .from('teams')
+    .select('*')
+    .eq('team_name', teamName)
+    .single();
+
+  if (error || !team) {
+    return null;
+  }
+
+  return team;
+};
+
 export const checkTeamMembership = async (
   userId: string, 
   teamName: string

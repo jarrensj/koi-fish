@@ -1,11 +1,8 @@
-// import express, { Express } from 'express';
 import express, { type Express, type Request, type Response } from 'express';
 import cors from 'cors';
 import { Keypair } from '@solana/web3.js';
-import { saveWallet, checkTeamMembership } from './supabase.js';
-// import fetch from 'node-fetch';
+import { saveWallet, checkTeamMembership, checkTeamWallet } from './supabase.js';
 
-// const app: Express = express();
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
 
@@ -32,6 +29,31 @@ app.post('/api/wallet/generate', async (req: Request, res: Response) => {
       });
     }
 
+    // Check if the team already has a wallet
+    const existingTeam = await checkTeamWallet(teamName);
+    
+    if (existingTeam) {
+      // Team already has a wallet, check if user has permission to access it
+      const { isAuthorized, role } = await checkTeamMembership(userId, teamName);
+      
+      if (!isAuthorized) {
+        return res.status(403).json({
+          success: false,
+          error: 'You do not have permission to access this team\'s wallet'
+        });
+      }
+      
+      // Return the existing wallet information
+      return res.json({
+        success: true,
+        publicAddress: existingTeam.wallet_address,
+        id: existingTeam.id,
+        teamName: existingTeam.team_name,
+        userRole: role || 'owner',
+        message: 'Team already has a wallet'
+      });
+    }
+    
     // Check if the user has permission to generate wallets for this team
     const { isAuthorized, role } = await checkTeamMembership(userId, teamName);
     
