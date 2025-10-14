@@ -27,15 +27,13 @@ function resolveJupiterEndpoints() {
   if (isProd && usingDefaults) {
     // In production, force explicit config to avoid accidental wrong hosts.
     throw new Error(
-      "JUP_QUOTE_URL and JUP_SWAP_URL are required in production. " +
-      "Set them in your environment."
+      "JUP_QUOTE_URL and JUP_SWAP_URL are required in production. Set them in your environment."
     );
   }
 
   if (!isProd && usingDefaults) {
     console.warn(
-      "[jupiter] Using default lite endpoints. " +
-      "Set JUP_QUOTE_URL/JUP_SWAP_URL to override."
+      "[jupiter] Using default lite endpoints. Set JUP_QUOTE_URL/JUP_SWAP_URL to override."
     );
   }
 
