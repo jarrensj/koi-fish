@@ -34,6 +34,7 @@ export interface Team {
   secret_key: string;
   wallet_addresses?: string[];
   owner?: string;
+  chain?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -42,7 +43,8 @@ export const saveWallet = async (
   secretKey: number[], 
   walletAddress: string,
   teamName?: string,
-  owner?: string
+  owner?: string,
+  chain?: string
 ): Promise<Team> => {
   const { data, error } = await supabase
     .from('teams')
@@ -51,7 +53,8 @@ export const saveWallet = async (
         wallet_address: walletAddress,
         secret_key: JSON.stringify(secretKey),
         team_name: teamName,
-        owner: owner
+        owner: owner,
+        chain: chain
       }
     ])
     .select()

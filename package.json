@@ -6,9 +6,9 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/server.js",
-    "dev": "node --loader ts-node/esm server.ts",
-    "watch": "nodemon --exec node --loader ts-node/esm server.ts"
+    "start": "node dist/src/server/server.js",
+    "dev": "node --loader ts-node/esm src/server/server.ts",
+    "watch": "nodemon --exec node --loader ts-node/esm src/server/server.ts"
   },
   "ts-node": {
     "esm": true

@@ -1,7 +1,7 @@
 import express, { type Express, type Request, type Response } from 'express';
 import cors from 'cors';
 import { Keypair } from '@solana/web3.js';
-import { saveWallet, checkTeamMembership, checkTeamWallet } from './supabase.js';
+import { saveWallet, checkTeamMembership, checkTeamWallet } from '../lib/supabase.js';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
@@ -13,19 +13,35 @@ app.use(express.json());
 // Generate and store a new wallet with team info
 app.post('/api/wallet/generate', async (req: Request, res: Response) => {
   try {
-    const {teamName, owner, userId } = req.body;
+    const {teamName, owner, userId, chain } = req.body;
     
     if (!owner) {
       return res.status(400).json({
         success: false,
-        error: 'Team name and owner are required'
+        error: 'Owner account required'
       });
     }
 
     if (!userId) {
       return res.status(401).json({
         success: false,
-        error: 'User authentication required'
+        error: 'User id is required'
+      });
+    }
+
+    if (!chain) {
+      return res.status(400).json({
+        success: false,
+        error: 'Chain is required'
+      });
+    }
+
+    // Validate chain parameter
+    const validChains = ['eth', 'base', 'abs', 'sol'];
+    if (!validChains.includes(chain.toLowerCase())) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid chain. Must be one of: eth, base, abs, sol'
       });
     }
 
@@ -39,7 +55,7 @@ app.post('/api/wallet/generate', async (req: Request, res: Response) => {
       if (!isAuthorized) {
         return res.status(403).json({
           success: false,
-          error: 'You do not have permission to access this team\'s wallet'
+          error: "You do not have permission to access this team's wallet"
         });
       }
       
@@ -50,6 +66,7 @@ app.post('/api/wallet/generate', async (req: Request, res: Response) => {
         id: existingTeam.id,
         teamName: existingTeam.team_name,
         userRole: role || 'owner',
+        chain: existingTeam.chain || 'sol', // Default to 'sol' for existing wallets
         message: 'Team already has a wallet'
       });
     }
@@ -77,7 +94,7 @@ app.post('/api/wallet/generate', async (req: Request, res: Response) => {
     const secretKeyArray = Array.from(secretKey);
     
     // Save to Supabase with team info
-    const savedTeam = await saveWallet(secretKeyArray, walletAddress, teamName, owner);
+    const savedTeam = await saveWallet(secretKeyArray, walletAddress, teamName, owner, chain.toLowerCase());
     
     // Return only the public address to the frontend
     res.json({
@@ -85,7 +102,8 @@ app.post('/api/wallet/generate', async (req: Request, res: Response) => {
       publicAddress: savedTeam.wallet_address,
       id: savedTeam.id,
       teamName: savedTeam.team_name,
-      userRole: role || 'owner'
+      userRole: role || 'owner',
+      chain: chain.toLowerCase()
     });
     
     console.log(`Created wallet: ${walletAddress} by user ${userId} (${role || 'owner'})`);
@@ -101,6 +119,7 @@ app.post('/api/wallet/generate', async (req: Request, res: Response) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`📝 API endpoints:`);
   console.log(`   POST   /api/wallet/generate - Generate new wallet`);
 });
 
