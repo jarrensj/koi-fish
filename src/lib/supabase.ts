@@ -1,5 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { storeEncryptedWalletSecret } from './wallet.js';
+import { Keypair } from '@solana/web3.js';
 
 dotenv.config();
 
@@ -30,8 +32,6 @@ export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseServic
 export interface Team {
   id?: string;
   team_name?: string;
-  wallet_address: string;
-  secret_key: string;
   wallet_addresses?: string[];
   owner?: string;
   chain?: string;
@@ -46,25 +46,35 @@ export const saveWallet = async (
   owner?: string,
   chain?: string
 ): Promise<Team> => {
-  const { data, error } = await supabase
+  // First, create the team record without the secret key
+  const { data: teamData, error: teamError } = await supabase
     .from('teams')
     .insert([
       {
-        wallet_address: walletAddress,
-        secret_key: JSON.stringify(secretKey),
         team_name: teamName,
         owner: owner,
-        chain: chain
+        chain: chain,
+        wallet_addresses: [walletAddress] // Store wallet address in the JSONB array
       }
     ])
     .select()
     .single();
 
-  if (error) {
-    throw new Error(`Failed to save wallet: ${error.message}`);
+  if (teamError) {
+    throw new Error(`Failed to save team: ${teamError.message}`);
   }
 
-  return data;
+  // Convert the secret key to Uint8Array and store it encrypted
+  try {
+    const secretKeyUint8 = new Uint8Array(secretKey);
+    await storeEncryptedWalletSecret(walletAddress, secretKeyUint8, teamData.id);
+  } catch (encryptionError) {
+    // If encryption fails, we should clean up the team record
+    await supabase.from('teams').delete().eq('id', teamData.id);
+    throw new Error(`Failed to encrypt and store wallet secret: ${encryptionError}`);
+  }
+
+  return teamData;
 };
 
 
@@ -120,4 +130,43 @@ export const checkTeamMembership = async (
   }
 
   return { isAuthorized: true, role: membership.role };
+};
+
+/**
+ * Get a team's wallet keypair for authorized operations
+ * @param teamName - The team name
+ * @param userId - The user ID requesting access
+ * @returns Promise that resolves to the team's wallet keypair
+ */
+export const getTeamWalletKeypair = async (
+  teamName: string,
+  userId: string
+): Promise<Keypair> => {
+  // First check authorization
+  const { isAuthorized, role } = await checkTeamMembership(userId, teamName);
+  
+  if (!isAuthorized) {
+    throw new Error('User not authorized to access team wallet');
+  }
+
+  // Get the team data
+  const { data: team, error: teamError } = await supabase
+    .from('teams')
+    .select('wallet_addresses')
+    .eq('team_name', teamName)
+    .single();
+
+  if (teamError || !team) {
+    throw new Error(`Team not found: ${teamName}`);
+  }
+
+  // Get the first wallet address from the array
+  const walletAddress = team.wallet_addresses?.[0];
+  if (!walletAddress) {
+    throw new Error(`No wallet found for team: ${teamName}`);
+  }
+
+  // Load the keypair from encrypted storage
+  const { loadKeypairFromDatabase } = await import('./wallet.js');
+  return await loadKeypairFromDatabase(walletAddress);
 };
