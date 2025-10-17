@@ -1,11 +1,13 @@
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required but not set');
-}
+const getJWTSecret = (): string => {
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required but not set');
+  }
+  return JWT_SECRET;
+};
 
 export interface JWTPayload {
   userId: string;
@@ -23,7 +25,7 @@ export const generateToken = (userId: string, email?: string): string => {
     email,
   };
 
-  return jwt.sign(payload, JWT_SECRET, {
+  return jwt.sign(payload, getJWTSecret(), {
     expiresIn: '24h', // Token expires in 24 hours
   });
 };
@@ -33,7 +35,7 @@ export const generateToken = (userId: string, email?: string): string => {
  */
 export const verifyToken = (token: string): JWTPayload => {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+    const decoded = jwt.verify(token, getJWTSecret()) as JWTPayload;
     return decoded;
   } catch (error) {
     throw new Error('Invalid or expired token');

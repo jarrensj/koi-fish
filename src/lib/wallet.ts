@@ -51,13 +51,11 @@ export function loadKeypair(): Keypair {
  * Store an encrypted wallet secret in the database
  * @param walletAddress - The wallet's public key address
  * @param secretKey - The wallet's private key as Uint8Array (64 bytes)
- * @param teamId - Optional team ID to associate with this wallet
  * @returns Promise that resolves to the stored wallet secret record
  */
 export async function storeEncryptedWalletSecret(
   walletAddress: string,
-  secretKey: Uint8Array,
-  teamId?: string
+  secretKey: Uint8Array
 ): Promise<any> {
   if (secretKey.length !== 64) {
     throw new Error(`Invalid secret key length: expected 64 bytes, got ${secretKey.length}`);
@@ -82,8 +80,7 @@ export async function storeEncryptedWalletSecret(
         encrypted_secret_key: encryptionResult.encryptedData,
         encryption_algorithm: encryptionResult.algorithm,
         iv: encryptionResult.iv,
-        tag: encryptionResult.tag,
-        team_id: teamId || null
+        tag: encryptionResult.tag
       }
     ])
     .select()

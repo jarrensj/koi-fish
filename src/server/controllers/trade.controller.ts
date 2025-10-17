@@ -1,17 +1,29 @@
 import { Request, Response } from "express";
 import { PublicKey } from "@solana/web3.js";
-import { getConnection, loadKeypair } from "../../lib/wallet.ts";
+import { getConnection } from "../../lib/wallet.ts";
 import { buyWithSol } from "../../lib/jupiter.ts";
+import { getWalletKeypair } from "../../lib/supabase.ts";
 
 export const postBuy = async (req: Request, res: Response) => {
   try {
-    const { mint, amountSol } = req.body ?? {};
-    if (!mint || !amountSol) return res.status(400).json({ success: false, error: "mint, amountSol required" });
+    const { mint, amountSol, walletAddress } = req.body ?? {};
+    if (!mint || !amountSol || !walletAddress) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "mint, amountSol, and walletAddress are required" 
+      });
+    }
 
     // Validate inputs
     new PublicKey(mint);
+    new PublicKey(walletAddress);
     const SOL = Number(amountSol);
-    if (!Number.isFinite(SOL) || SOL <= 0) return res.status(400).json({ success: false, error: "amountSol must be > 0" });
+    if (!Number.isFinite(SOL) || SOL <= 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "amountSol must be > 0" 
+      });
+    }
 
     // Env-driven knobs
     const slippageBps = Number(process.env.SLIPPAGE_BPS || 100);
@@ -19,7 +31,7 @@ export const postBuy = async (req: Request, res: Response) => {
 
     // RPC + Wallet
     const conn = getConnection();
-    const wallet = loadKeypair();
+    const wallet = await getWalletKeypair(walletAddress);
 
     // Swap
     const { sig, quote } = await buyWithSol(conn, wallet, mint, SOL, slippageBps, priorityMicrolamports);

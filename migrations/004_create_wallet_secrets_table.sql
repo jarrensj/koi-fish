@@ -9,14 +9,12 @@ CREATE TABLE IF NOT EXISTS wallet_secrets (
     encryption_key_id TEXT, -- Reference to key management system (optional)
     iv TEXT NOT NULL, -- Initialization vector for encryption
     tag TEXT NOT NULL, -- Authentication tag for GCM mode
-    team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_wallet_secrets_wallet_address ON wallet_secrets(wallet_address);
-CREATE INDEX IF NOT EXISTS idx_wallet_secrets_team_id ON wallet_secrets(team_id);
 CREATE INDEX IF NOT EXISTS idx_wallet_secrets_created_at ON wallet_secrets(created_at);
 
 -- Enable Row Level Security (RLS)

@@ -4,8 +4,8 @@ const route = Router();
 
 /**
  * POST /api/trade/buy
- * Body: { mint: string, amountSol: number, dryRun?: boolean }
- * Swaps SOL -> <mint> using the wallet from .env.local
+ * Body: { mint: string, amountSol: number, walletAddress: string }
+ * Swaps SOL -> <mint> using the specified wallet address
  */
 route.post("/api/trade/buy", postBuy);
 
