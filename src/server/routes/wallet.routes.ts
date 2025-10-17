@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { postCreateWallet, getWalletInfo } from "../controllers/wallet.controller.ts";
+import { postCreateWallet, getWalletInfo, login } from "../controllers/wallet.controller.ts";
 
 const router = Router();
 
@@ -16,5 +16,12 @@ router.post("/api/wallet/create", postCreateWallet);
  * Returns: { success: boolean, walletAddress: string, exists: boolean }
  */
 router.get("/api/wallet/:walletAddress", getWalletInfo);
+
+/**
+ * POST /api/auth/login
+ * Generates a JWT token for the user
+ * Returns: { success: boolean, token: string, userId: string, email: string }
+ */
+router.post("/api/auth/login", login);
 
 export default router;

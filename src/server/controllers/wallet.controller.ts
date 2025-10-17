@@ -1,6 +1,36 @@
 import { Request, Response } from "express";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { createWallet } from "../../lib/supabase.ts";
+import { generateToken } from '../../lib/auth.js';
+
+export const login = async (req: Request, res: Response) => {
+  try {
+    const { userId, email } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'User ID is required'
+      });
+    }
+
+    // Generate JWT token
+    const token = generateToken(userId, email);
+    
+    res.json({
+      success: true,
+      token,
+      userId,
+      email
+    });
+  } catch (error) {
+    console.error('❌ Error generating token:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate token'
+    });
+  }
+};
 
 export const postCreateWallet = async (req: Request, res: Response) => {
   try {

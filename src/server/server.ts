@@ -1,6 +1,5 @@
 import express, { type Express, type Request, type Response } from 'express';
 import cors from 'cors';
-import { generateToken } from '../lib/auth.js';
 import routes from "./routes/index.ts";
 import dotenv from "dotenv";
 
@@ -30,36 +29,6 @@ app.use(express.json());
 
 // Mounts route modules
 app.use(routes);
-
-// Login endpoint to generate JWT token
-app.post('/api/auth/login', async (req: Request, res: Response) => {
-  try {
-    const { userId, email } = req.body;
-    
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        error: 'User ID is required'
-      });
-    }
-
-    // Generate JWT token
-    const token = generateToken(userId, email);
-    
-    res.json({
-      success: true,
-      token,
-      userId,
-      email
-    });
-  } catch (error) {
-    console.error('❌ Error generating token:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to generate token'
-    });
-  }
-});
 
 
 // Public endpoints
