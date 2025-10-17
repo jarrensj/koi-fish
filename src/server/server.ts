@@ -1,10 +1,10 @@
-import dotenv from "dotenv";
-dotenv.config({ path: ".env.local" });
-
 import express, { type Express, type Request, type Response } from 'express';
 import cors from 'cors';
 import { generateToken } from '../lib/auth.js';
 import routes from "./routes/index.ts";
+import dotenv from "dotenv";
+
+dotenv.config({ path: ".env.local" });
 
 // Validate required environment variables
 if (!process.env.JWT_SECRET) {
