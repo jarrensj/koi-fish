@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { PublicKey } from "@solana/web3.js";
-import { getConnection, loadKeypair } from "../../lib/wallet.ts";
-import { buyWithSol } from "../../lib/jupiter.ts";
+import { getConnection, loadKeypair } from "../../lib/solana/solWallet.ts";
+// src/lib/solana/solWallet.ts
+import { buyWithSol } from "../../lib/solana/jupiter.ts";
 
 export const postBuy = async (req: Request, res: Response) => {
   try {
