@@ -3,6 +3,8 @@ import cors from "cors";
 import routes from "./routes/index.ts";
 
 import dotenv from "dotenv";
+
+// Load environment variables from .env.local 
 dotenv.config({ path: ".env.local" });
 
 import dns from "dns";
