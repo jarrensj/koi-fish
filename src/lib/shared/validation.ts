@@ -29,6 +29,7 @@ export const CadenceTraderSchema = z.object({
   priorityFee: z.number().nonnegative().optional(),
 });
 
+// export types to frontend for autocomplete
 export type CadenceTraderInput = z.infer<typeof CadenceTraderSchema>;
 
 // Format zod issues into a small, client-friendly array 
