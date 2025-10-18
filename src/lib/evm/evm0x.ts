@@ -3,7 +3,6 @@
  * - get0xQuote: fetch ExactIn quote (unified v2 endpoint + API key)
  * - ensureAllowance: set ERC-20 allowance when selling a token
  * - send0xSwap: broadcast
- * - displayToOnChain / getTokenDecimals / buildSwapPreview: utils
  *
  * Notes:
  * - v2 uses the native ETH sentinel address 0xEeee... (NOT "ETH") in params.
@@ -195,62 +194,4 @@ export async function displayToOnChain(opts: {
   const decimals: number = await erc20.decimals();
   const onChain = parseUnits(String(amount), decimals);
   return { onChain, decimals };
-}
-
-/** Simple in-memory decimals cache to reduce RPC calls. */
-const _decimalsCache = new Map<string, number>();
-export async function getTokenDecimals(provider: Wallet["provider"], tokenOrNative: string) {
-  if (
-    tokenOrNative.toUpperCase() === "ETH" ||
-    tokenOrNative.toLowerCase() === NATIVE_ETH.toLowerCase()
-  ) return 18;
-
-  const key = tokenOrNative.toLowerCase();
-  if (_decimalsCache.has(key)) return _decimalsCache.get(key)!;
-  const erc20 = new Contract(tokenOrNative, ERC20_ABI, provider);
-  const d: number = await erc20.decimals();
-  _decimalsCache.set(key, d);
-  return d;
-}
-
-/** Build a human-friendly preview from a v2 0x quote. */
-export async function buildSwapPreview(opts: {
-  provider: Wallet["provider"];
-  quote: OxQuote;
-  sellToken: string;          // optional for amounts; pass if you want exact unit conversion
-  buyToken: string;           // optional for amounts; pass if you want exact unit conversion
-}) {
-  const { provider, quote, sellToken, buyToken } = opts;
-  const tx = quote.transaction;
-
-  const sellDec = sellToken ? await getTokenDecimals(provider, sellToken) : 18;
-  const buyDec  = buyToken  ? await getTokenDecimals(provider, buyToken)  : 6;
-
-  const sellDisplay = quote.sellAmount ? formatUnits(BigInt(quote.sellAmount), sellDec) : null;
-  const buyDisplay  = quote.buyAmount  ? formatUnits(BigInt(quote.buyAmount),  buyDec)  : null;
-
-  const gas = tx.gas ? BigInt(tx.gas) : 0n;
-  const gasPrice = tx.gasPrice ? BigInt(tx.gasPrice) : 0n;
-  const valueWei = tx.value ? BigInt(tx.value) : 0n;
-  const estNetworkFeeWei = gas * gasPrice;
-
-  return {
-    amounts: {
-      sellOnChain: quote.sellAmount ?? null,
-      buyOnChain:  quote.buyAmount ?? null,
-      sellDisplay,
-      buyDisplay,
-      minbuyDisplay: quote.minBuyAmount ? formatUnits(BigInt(quote.minBuyAmount), buyDec) : null,
-      slippageBps: quote.slippageBps ?? null,
-    },
-    transactionSignature: {
-      to: tx.to,
-      dataBytes: tx.data ? (tx.data.length - 2) / 2 : 0,
-      valueEth: formatUnits(valueWei, 18),
-      gasUnits: gas.toString(),
-      gasPriceGwei: gasPrice ? (Number(gasPrice) / 1e9).toFixed(3) : null,
-      estNetworkFeeEth: estNetworkFeeWei ? formatUnits(estNetworkFeeWei, 18) : null,
-    },
-    issues: quote.issues ?? null,
-  };
 }
