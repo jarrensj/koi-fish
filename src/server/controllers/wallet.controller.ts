@@ -1,26 +1,18 @@
 import { Request, Response } from "express";
-import { getPrivyClient, getPrivyWallet, getUserPrivyWallets, createPrivyWalletWithAuthKey } from "../../lib/wallet.js";
+import { createWallet, getWallet } from "../../lib/wallet.js";
 
-export const createWallet = async (req: Request, res: Response) => {
+/**
+ * Creates a new wallet for the specified blockchain chain type
+ * @param req - Express request object containing chainType in body (defaults to "solana")
+ * @param res - Express response object
+ * @returns JSON response with wallet details or error message
+ */
+export const createWalletHandler = async (req: Request, res: Response) => {
   try {
-    const { userId, chainType = "solana" } = req.body;
+    const {  chainType = "solana" } = req.body;
 
-    if (!userId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "userId is required" 
-      });
-    }
-
-    // Ensure userId has the correct Privy format
-    const privyUserId = userId.startsWith('did:privy:') ? userId : `did:privy:${userId}`;
-
-    // Create wallet for the user
-    const privy = getPrivyClient();
-    const wallet = await privy.wallets().create({
-      chain_type: chainType as "ethereum" | "solana",
-      owner: { user_id: privyUserId },
-    });
+    // Create wallet using Privy authorization key
+    const wallet = await createWallet(chainType as "ethereum" | "solana");
 
     return res.json({
       success: true,
@@ -40,7 +32,13 @@ export const createWallet = async (req: Request, res: Response) => {
   }
 };
 
-export const getWallet = async (req: Request, res: Response) => {
+/**
+ * Retrieves wallet information by wallet ID
+ * @param req - Express request object containing walletId in params
+ * @param res - Express response object
+ * @returns JSON response with wallet details or error message
+ */
+export const getWalletHandler = async (req: Request, res: Response) => {
   try {
     const { walletId } = req.params;
 
@@ -51,7 +49,7 @@ export const getWallet = async (req: Request, res: Response) => {
       });
     }
 
-    const wallet = await getPrivyWallet(walletId);
+    const wallet = await getWallet(walletId);
 
     return res.json({
       success: true,
@@ -67,69 +65,6 @@ export const getWallet = async (req: Request, res: Response) => {
     return res.status(500).json({ 
       success: false, 
       error: error?.message || "Failed to get wallet" 
-    });
-  }
-};
-
-export const getUserWallets = async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.params;
-
-    if (!userId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "userId is required" 
-      });
-    }
-
-    const walletsPage = await getUserPrivyWallets(userId);
-    const wallets = walletsPage.data;
-
-    return res.json({
-      success: true,
-      wallets: wallets.map(wallet => ({
-        id: wallet.id,
-        address: wallet.address,
-        chainType: wallet.chain_type,
-        createdAt: wallet.created_at,
-      })),
-    });
-  } catch (error: any) {
-    console.error("Error getting user wallets:", error);
-    return res.status(500).json({ 
-      success: false, 
-      error: error?.message || "Failed to get user wallets" 
-    });
-  }
-};
-
-export const createWalletWithAuthKey = async (req: Request, res: Response) => {
-  try {
-    const { authKey, chainType = "solana" } = req.body;
-
-    if (!authKey) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "authKey is required" 
-      });
-    }
-
-    const wallet = await createPrivyWalletWithAuthKey(authKey, chainType as "ethereum" | "solana");
-
-    return res.json({
-      success: true,
-      wallet: {
-        id: wallet.id,
-        address: wallet.address,
-        chainType: wallet.chain_type,
-        createdAt: wallet.created_at,
-      },
-    });
-  } catch (error: any) {
-    console.error("Error creating wallet with auth key:", error);
-    return res.status(500).json({ 
-      success: false, 
-      error: error?.message || "Failed to create wallet with auth key" 
     });
   }
 };
