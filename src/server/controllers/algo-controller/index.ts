@@ -11,7 +11,7 @@ import type { InputSol, InputEvm } from "./types.ts";
 
 import { handleSol } from "./sol.handler.ts";
 import { handleEvm } from "./evm.handler.ts";
-import { CadenceTraderRequest } from "@lib/shared/types.ts";
+import { CadenceTraderRequest } from "../../../lib/shared/types.ts";
 
 export async function postCadenceTrader(req: Request, res: Response) {
   const parsed = CadenceTraderSchema.safeParse(req.body);
@@ -23,6 +23,7 @@ export async function postCadenceTrader(req: Request, res: Response) {
 
   const body = parsed.data as CadenceTraderRequest;
   const chain = body.blockchain;
+
   if (!CHAINS[chain]) {
     return res.status(400).json({ success: false, error: `Unsupported chain: ${chain}` });
   }

@@ -4,7 +4,7 @@
 
 import { isNativeSymbol } from "../../../lib/shared/chains.ts";
 import { getConnection, loadKeypair } from "../../../lib/solana/solWallet.ts";
-import { type JupQuote, buyWithSol } from "../../../lib/solana/jupiter.ts";
+import { buyWithSol } from "../../../lib/solana/jupiter.ts";
 import type { InputSol } from "./types.ts";
 
 export async function handleSol(input: InputSol) {

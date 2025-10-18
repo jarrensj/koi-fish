@@ -96,7 +96,7 @@ export async function get0xQuote(opts: {
 
   // Light logging only in dev
   if ((process.env.NODE_ENV || "development") !== "production") {
-    console.log("[0x v2] GET", url);
+    console.debug("[0x v2] GET", url);
   }
 
   const res = await fetch(url, {

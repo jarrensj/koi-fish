@@ -2,8 +2,8 @@
  * EVM cadence handler: ETH/Base/Zora via 0x (ExactIn).
  * - Ensures allowance if selling ERC-20
  */
-import { CHAINS, isNativeSymbol } from "../../../lib/shared/chains.ts";
-import { loadEvmWalletFromEnv /* loadEvmWalletFromDatabase */ } from "../../../lib/evm/evmWallet.ts";
+import { isNativeSymbol } from "../../../lib/shared/chains.ts";
+import { loadEvmWallet } from "../../../lib/evm/evmWallet.ts";
 import { OxQuote, get0xQuote, displayToOnChain, ensureAllowance, send0xSwap,  } from "../../../lib/evm/evm0x.ts";
 import type { InputEvm } from "./types.ts";
 
@@ -14,10 +14,11 @@ export async function handleEvm(input: InputEvm) {
     blockchain,
     amount,
     slippageBps = Number(process.env.SLIPPAGE_BPS || 100),
+    public_wallet,
   } = input;
 
   const chain = blockchain; // "eth" | "base" | "zora"
-  const evmWallet = loadEvmWalletFromEnv(chain); // swap to DB-backed later if desired
+  const evmWallet = await loadEvmWallet(public_wallet, chain); // swap to DB-backed later if desired
 
   const sellTokenParam = isNativeSymbol(chain, sellToken) ? "ETH" : sellToken;
   const buyTokenParam  = isNativeSymbol(chain, buyToken)   ? "ETH" : buyToken;
