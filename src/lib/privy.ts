@@ -5,9 +5,9 @@
  * It allows the application to create and manage wallets on behalf of users.
  */
 
-import { PrivyClient as PrivyServerClient } from '@privy-io/server-auth';
+import { PrivyClient } from '@privy-io/node';
 import { Connection, PublicKey, Keypair } from '@solana/web3.js';
-import { getConnection } from './wallet.js';
+import { getConnection } from './wallet.ts';
 
 export interface PrivyWallet {
   id: string;
@@ -18,88 +18,59 @@ export interface PrivyWallet {
 }
 
 export class PrivyWalletService {
-  private privy: PrivyServerClient;
+  private privy: PrivyClient;
   private connection: Connection;
 
   constructor() {
     const appId = process.env.PRIVY_APP_ID;
     const appSecret = process.env.PRIVY_APP_SECRET;
+    const authKey = process.env.PRIVY_AUTHORIZATION_KEY;
 
     if (!appId || !appSecret) {
       throw new Error('PRIVY_APP_ID and PRIVY_APP_SECRET environment variables are required');
     }
 
-    this.privy = new PrivyServerClient(appId, appSecret);
+    if (!authKey) {
+      throw new Error('PRIVY_AUTHORIZATION_KEY environment variable is required for server-side wallet creation');
+    }
+
+    // Initialize Privy client for server-side wallet creation
+    this.privy = new PrivyClient({
+      appId: appId,
+      appSecret: appSecret,
+    });
     this.connection = getConnection();
   }
 
   /**
-   * Create a new embedded wallet for a user
+   * Create a new embedded wallet for a user using Privy Server SDK
    * @param userId - Optional user identifier
    * @returns Promise<PrivyWallet>
    */
   async createWallet(userId?: string): Promise<PrivyWallet> {
     try {
-      // Note: The Privy server SDK doesn't directly support creating wallets
-      // This would typically be done through their REST API or client-side SDK
-      // For now, we'll create a mock wallet for demonstration purposes
+      console.log('Creating wallet using Privy Node.js SDK...');
       
-      // Generate a new Solana keypair
-      const keypair = Keypair.generate();
-      const address = keypair.publicKey.toString();
-      const walletId = `privy_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Use the official Privy Node.js SDK method
+      const wallet = await this.privy.wallets().create({
+        chain_type: 'solana'
+        // Note: For server-side wallets, owner is typically not specified
+        // The wallet will be owned by the authorization key automatically
+      });
+
+      // Convert the Privy wallet response to our interface
+      const publicKey = new PublicKey(wallet.address);
       
       return {
-        id: walletId,
-        address: address,
-        publicKey: keypair.publicKey,
-        createdAt: new Date().toISOString(),
+        id: wallet.id,
+        address: wallet.address,
+        publicKey: publicKey,
+        createdAt: new Date(wallet.created_at * 1000).toISOString(), // Convert timestamp to ISO string
         userId: userId || undefined,
       };
     } catch (error) {
       console.error('Error creating Privy wallet:', error);
       throw new Error(`Failed to create wallet: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  /**
-   * Get wallet information by wallet ID
-   * @param walletId - The wallet ID to retrieve
-   * @returns Promise<PrivyWallet | null>
-   */
-  async getWallet(walletId: string): Promise<PrivyWallet | null> {
-    try {
-      // Note: This is a simplified implementation
-      // In a real implementation, you would store wallet data in a database
-      // and retrieve it using the walletId
-      
-      // For now, we'll return null to indicate wallet not found
-      // This should be replaced with actual database lookup
-      console.warn('getWallet not fully implemented - wallet lookup requires database storage');
-      return null;
-    } catch (error) {
-      console.error('Error getting Privy wallet:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Get wallet balance in SOL
-   * @param walletId - The wallet ID to check balance for
-   * @returns Promise<number> - Balance in SOL
-   */
-  async getWalletBalance(walletId: string): Promise<number> {
-    try {
-      const wallet = await this.getWallet(walletId);
-      if (!wallet) {
-        throw new Error('Wallet not found');
-      }
-
-      const balance = await this.connection.getBalance(wallet.publicKey);
-      return balance / 1e9; // Convert lamports to SOL
-    } catch (error) {
-      console.error('Error getting wallet balance:', error);
-      throw new Error(`Failed to get wallet balance: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { privyWalletService } from "../../lib/privy.js";
+import { privyWalletService } from "../../lib/privy.ts";
 
 /**
  * Create a new wallet and return the address
@@ -13,7 +13,13 @@ export const createWallet = async (req: Request, res: Response) => {
     
     return res.json({
       success: true,
-      address: wallet.address,
+      wallet: {
+        id: wallet.id,
+        address: wallet.address,
+        publicKey: wallet.publicKey.toString(),
+        createdAt: wallet.createdAt,
+        userId: wallet.userId
+      }
     });
   } catch (error: any) {
     console.error('Error creating wallet:', error);
