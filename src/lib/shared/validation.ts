@@ -27,7 +27,13 @@ export const CadenceTraderSchema = z.object({
   dryRun: z.boolean().optional(),
   slippageBps: z.number().int().min(1).max(5000).optional(),
   priorityFee: z.number().nonnegative().optional(),
-});
+}).refine(
+  (data) => data.sellToken.toLowerCase() !== data.buyToken.toLowerCase(),
+  {
+    message: "sellToken and buToken must be different",
+    path: ["buyToken"], // This will attach the error to the buyToken field
+  }
+);
 
 // export types to frontend for autocomplete
 export type CadenceTraderInput = z.infer<typeof CadenceTraderSchema>;

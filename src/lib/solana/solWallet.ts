@@ -29,18 +29,22 @@ export function loadKeypair(): Keypair {
   if (solKey) {
     const bytes = bs58.decode(solKey);
     if (bytes.length !== 64) {
-      throw new Error(`Base58 secret must decode to 64 bytes, got ${bytes.length}`);
+      throw new Error(`Base58 secret must decode to 64 bytes`);
     }
     return Keypair.fromSecretKey(bytes);
   }
 
   if (solJson) {
-    const arr = JSON.parse(solJson) as number[];
-    const bytes = Uint8Array.from(arr);
-    if (bytes.length !== 64) {
-      throw new Error(`JSON secret must be 64 bytes, got ${bytes.length}`);
+    try {
+      const arr = JSON.parse(solJson) as number[];
+      const bytes = Uint8Array.from(arr);
+      if (bytes.length !== 64) {
+        throw new Error(`JSON secret must be 64 bytes`);
+      }
+      return Keypair.fromSecretKey(bytes);
+    } catch (error) {
+      throw new Error("Failed to load keypair from SOL_WALLET_SECRET_KEY_JSON");
     }
-    return Keypair.fromSecretKey(bytes);
   }
 
   throw new Error("Set SOL_WALLET_SECRET_KEY or SOL_WALLET_SECRET_KEY_JSON in .env");
