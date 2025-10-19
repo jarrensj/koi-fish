@@ -2,9 +2,10 @@
  * Purpose:
  * - Provide a shared Solana RPC Connection (singleton).
  * - Load a wallet Keypair from environment variables.
+ * - Integrate with Privy for embedded wallet management.
  */
-
 import { Connection, Keypair } from "@solana/web3.js";
+import { PrivyClient } from "@privy-io/node";
 import bs58 from "bs58";
 
 let _conn: Connection | null = null;
@@ -20,26 +21,71 @@ export function getConnection(rpcUrl?: string): Connection {
   return _conn;
 }
 
-export function loadKeypair(): Keypair {
-  const b58 = process.env.WALLET_SECRET_KEY_BASE58?.trim();
-  const json = process.env.WALLET_SECRET_KEY_JSON?.trim();
+// Privy wallet management
+let _privyClient: PrivyClient | null = null;
 
-  if (b58) {
-    const bytes = bs58.decode(b58);
-    if (bytes.length !== 64) {
-      throw new Error(`Base58 secret must decode to 64 bytes, got ${bytes.length}`);
-    }
-    return Keypair.fromSecretKey(bytes);
+export function getPrivyClient(): PrivyClient {
+  if (_privyClient) return _privyClient;
+
+  const appId = process.env.PRIVY_APP_ID;
+  const appSecret = process.env.PRIVY_APP_SECRET;
+
+  if (!appId || !appSecret) {
+    throw new Error("PRIVY_APP_ID and PRIVY_APP_SECRET are required in .env");
   }
 
-  if (json) {
-    const arr = JSON.parse(json) as number[];
-    const bytes = Uint8Array.from(arr);
-    if (bytes.length !== 64) {
-      throw new Error(`JSON secret must be 64 bytes, got ${bytes.length}`);
-    }
-    return Keypair.fromSecretKey(bytes);
-  }
+  const clientConfig: any = {
+    appId,
+    appSecret,
+  };
 
-  throw new Error("Set WALLET_SECRET_KEY_BASE58 or WALLET_SECRET_KEY_JSON in .env");
+  _privyClient = new PrivyClient(clientConfig);
+
+  return _privyClient;
 }
+
+/**
+ * Create a new wallet using Privy authorization key
+ * Returns wallet with address that can be passed to frontend
+ */
+export async function createWallet(chainType: "ethereum" | "solana" = "solana") {
+  const privy = getPrivyClient();
+  const authorizationKey = process.env.PRIVY_AUTHORIZATION_KEY;
+  
+  if (!authorizationKey) {
+    throw new Error("PRIVY_AUTHORIZATION_KEY is required to create wallets");
+  }
+  
+  return await privy.wallets().create({
+    chain_type: chainType,
+    owner: { public_key: authorizationKey }
+  });
+}
+
+/**
+ * Get wallet details by wallet ID
+ */
+export async function getWallet(walletId: string) {
+  const privy = getPrivyClient();
+  return await privy.wallets().get(walletId);
+}
+
+/**
+ * Load a keypair from environment variables for server-side trading
+ * This is separate from Privy embedded wallets and used for automated trading
+ */
+export function loadKeypair(): Keypair {
+  const privateKeyBase58 = process.env.SOLANA_PRIVATE_KEY;
+  
+  if (!privateKeyBase58) {
+    throw new Error("SOLANA_PRIVATE_KEY environment variable is required for server-side trading");
+  }
+  
+  try {
+    const privateKeyBytes = bs58.decode(privateKeyBase58);
+    return Keypair.fromSecretKey(privateKeyBytes);
+  } catch (error) {
+    throw new Error(`Invalid SOLANA_PRIVATE_KEY format: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
