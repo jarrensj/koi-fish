@@ -1,13 +1,12 @@
 import express from "express";
 import cors from "cors";
 import routes from "./routes/index.ts";
-
 import dotenv from "dotenv";
-dotenv.config({ path: ".env.local" });
-
 import dns from "dns";
-dns.setDefaultResultOrder?.("ipv4first");
 
+
+dotenv.config({ path: ".env.local" });
+dns.setDefaultResultOrder?.("ipv4first");
 
 const app = express();
 app.use(express.json());

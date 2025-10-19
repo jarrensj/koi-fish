@@ -2,14 +2,18 @@
   "name": "koi-fish",
   "version": "1.0.0",
   "description": "A Node.js server project",
-  "main": "dist/server.js",
+  "main": "server.js",
   "type": "module",
   "scripts": {
     "start": "tsx src/server/server.ts",
-    "dev": "ts-node src/server.ts",
+    "dev": "tsx src/server/server.ts",
     "watch": "nodemon --exec ts-node src/server/server.ts",
     "build": "tsc",
     "type-check": "tsc --noEmit",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,json,md}\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -18,17 +22,27 @@
   "dependencies": {
     "@privy-io/node": "^0.3.0",
     "@solana/web3.js": "^1.98.4",
+    "@supabase/supabase-js": "^2.75.0",
+    "@types/crypto-js": "^4.2.2",
+    "@types/jsonwebtoken": "^9.0.10",
     "bs58": "^6.0.0",
     "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
     "dotenv": "^17.2.3",
+    "ethers": "^6.15.0",
     "express": "^5.1.0",
-    "node-fetch": "^3.3.2"
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^3.3.2",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/node": "^24.7.0",
+    "eslint": "^9.38.0",
+    "prettier": "^3.6.2",
     "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.1"
   }
 }

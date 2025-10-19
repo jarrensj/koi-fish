@@ -1,15 +1,18 @@
 /**
- * Purpose:
- * - Keeps a modular 3-step flow (getQuote → buildSwapTx → sendSwap)
+ * Jupiter swap helpers for SOL -> SPL ExactIn swaps.
+ * - getQuote: fetch a route/quote
+ * - buildSwapTx: build a VersionedTransaction from a quote
+ * - sendSwap: sign & send
+ * - buyWithSol: your original orchestration helper (SOL -> token)
+ * - swapSolExactIn: optional wrapper that matches the controller name
  */
-
 import fetch from "node-fetch";
 import {
   PublicKey,
   VersionedTransaction,
   Connection,
   Keypair,
-  LAMPORTS_PER_SOL,
+  BlockhashWithExpiryBlockHeight,
 } from "@solana/web3.js";
 
 /** Local WSOL mint (keep self-contained to avoid cross-module coupling). */
@@ -19,7 +22,7 @@ const WSOL_MINT = "So11111111111111111111111111111111111111112";
 function resolveJupiterEndpoints() {
   const JUP_API_BASE_URL = (process.env.JUP_API_BASE_URL || "https://lite-api.jup.ag").trim();
   const JUP_QUOTE = (process.env.JUP_QUOTE_URL || `${JUP_API_BASE_URL}/swap/v1/quote`).trim();
-  const JUP_SWAP  = (process.env.JUP_SWAP_URL  || `${JUP_API_BASE_URL}/swap/v1/swap`).trim();
+  const JUP_SWAP = (process.env.JUP_SWAP_URL || `${JUP_API_BASE_URL}/swap/v1/swap`).trim();
 
   const isProd = (process.env.NODE_ENV || "").toLowerCase() === "production";
   const usingDefaults = !process.env.JUP_QUOTE_URL || !process.env.JUP_SWAP_URL;
@@ -133,11 +136,21 @@ export async function sendSwap(
 ): Promise<string | null> {
   tx.sign([wallet]);
 
+  // Get a recent blockhash context for confirmation
+  const latest: BlockhashWithExpiryBlockHeight = await conn.getLatestBlockhash("finalized");
+
+  // send the raw text
   const sig = await conn.sendRawTransaction(tx.serialize(), {
     skipPreflight: false,
     maxRetries: 3,
   });
-  await conn.confirmTransaction(sig, "confirmed");
+
+  await conn.confirmTransaction({
+    signature: sig,
+    blockhash: latest.blockhash, 
+    lastValidBlockHeight: latest.lastValidBlockHeight
+  });
+
   return sig;
 }
 
@@ -147,6 +160,13 @@ export async function sendSwap(
  * Steps: getQuote → buildSwapTx → sendSwap
  * @returns { tx, sig, quote } so the controller can return data to the client
  */
+
+function toLamports(amount: number | string): bigint {
+  const [int = "0", frac = ""] = String(amount).split(".");
+  const frac9 = (frac + "000000000").slice(0, 9); // pad/truncate to 9
+  return BigInt(int) * BigInt(1_000_000_000) + BigInt(frac9);
+}
+
 export async function buyWithSol(
   conn: Connection,
   wallet: Keypair,
@@ -155,7 +175,9 @@ export async function buyWithSol(
   slippageBps: number,
   priorityFeeMicrolamports: number,
 ): Promise<{ tx: VersionedTransaction; sig: string | null; quote: JupQuote }> {
-  const lamports = BigInt(Math.floor(amountSol * LAMPORTS_PER_SOL));
+
+
+  const lamports = toLamports(amountSol);
   const quote = await getQuote(WSOL_MINT, outputMint, lamports, slippageBps);
 
   if (!quote?.routePlan || (Array.isArray(quote.routePlan) && quote.routePlan.length === 0)) {
@@ -164,5 +186,6 @@ export async function buyWithSol(
 
   const tx = await buildSwapTx(quote, wallet.publicKey, priorityFeeMicrolamports);
   const sig = await sendSwap(conn, tx, wallet);
+
   return { tx, sig, quote };
 }
