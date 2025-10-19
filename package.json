@@ -20,6 +20,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@privy-io/node": "^0.3.0",
     "@solana/web3.js": "^1.98.4",
     "@supabase/supabase-js": "^2.75.0",
     "@types/crypto-js": "^4.2.2",
