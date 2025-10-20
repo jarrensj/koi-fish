@@ -8,7 +8,7 @@ const route = Router();
 // * POST /api/algo/cadence-trader
 // * Body: {
 // * public_wallet: string,
-// * sellToken: string, 
+// * sellToken: string,
 // * buyToken: string,
 // * blockchain: "sol"|"eth"|"base"|"zora",
 // * amount: number,
@@ -23,7 +23,7 @@ route.post("/api/algo/cadence-trader", postCadenceTrader);
 route.get("/api/algos", async (_req, res) => {
   const { data, error } = await supabase
     .from("algos")
-    .select("code, name, desc, status, min_alloc_sol, fee_bps")
+    .select("code, name, desc, status, minAllocSol, feeBps")
     .eq("status", "active")
     .order("code", { ascending: true });
 
@@ -33,7 +33,5 @@ route.get("/api/algos", async (_req, res) => {
   }
   return res.json(data ?? []);
 });
-
-
 
 export default route;

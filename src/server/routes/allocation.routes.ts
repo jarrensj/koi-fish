@@ -39,9 +39,9 @@ route.get("/api/allocations", async (req, res) => {
     (data || []).map((row: any) => ({
       allocationId: row.id,
       status: row.status,
-      allocated_sol: row.allocated_sol,
-      pnl_sol: row.pnl_sol,
-      updated_at: row.updated_at,
+      allocatedSol: row.allocated_sol,
+      pnlSol: row.pnl_sol,
+      updatedAt: row.updated_at,
       algo: row.algo,
     }))
   );
