@@ -23,7 +23,7 @@ route.post("/api/algo/cadence-trader", postCadenceTrader);
 route.get("/api/algos", async (_req, res) => {
   const { data, error } = await supabase
     .from("algos")
-    .select("code, name, desc, status, minAllocSol, feeBps")
+    .select("code, name, desc, status, min_alloc_sol, fee_bps")
     .eq("status", "active")
     .order("code", { ascending: true });
 
