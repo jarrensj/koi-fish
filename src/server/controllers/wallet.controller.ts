@@ -1,26 +1,46 @@
 import { Request, Response } from "express";
-import { createWallet, getWallet } from "../../lib/wallet.js";
+import { CHAINS, type ChainKey } from "../../lib/shared/chains.ts";
+import { createEmbeddedWallet, getEmbeddedWallet } from "../../lib/privy/privyCreateWallet.ts";
+
 
 /**
  * Creates a new wallet for the specified blockchain chain type
- * @param req - Express request object containing chainType in body (defaults to "solana")
+ * @param req - Express request object containing chainType in body { chain?: "sol" | "eth" | "base" | "zora" }  (defaults to "sol")
  * @param res - Express response object
  * @returns JSON response with wallet details or error message
  */
 export const createWalletHandler = async (req: Request, res: Response) => {
   try {
-    const {  chainType = "solana" } = req.body;
+
+     // Read raw value; treat it as unknown to validate against CHAINS first.
+    const chainRaw: unknown = req.body?.chain ?? "sol";
+
+    // Validate chain name using the central CHAINS registry
+    if (typeof chainRaw !== "string" || !(chainRaw in CHAINS)) {
+      return res.status(400).json({ success: false, error: "Invalid chain" });
+    }
+
+    const chain = chainRaw as ChainKey;
+
+    // Embedded wallet scope: only "sol" and "eth" are supported for now.
+    // Return 400 for valid-but-unsupported chains like "base" or "zora".
+    if (chain !== "sol" && chain !== "eth") {
+      return res.status(400).json({
+        success: false,
+        error: 'Embedded wallets are supported only for "sol" and "eth".',
+      });
+    }
 
     // Create wallet using Privy authorization key
-    const wallet = await createWallet(chainType as "ethereum" | "solana");
+    const wallet = await  createEmbeddedWallet(chain);
 
     return res.json({
       success: true,
       wallet: {
         id: wallet.id,
         address: wallet.address,
-        chainType: wallet.chain_type,
-        createdAt: wallet.created_at,
+        chainType: wallet.chainType,
+        createdAt: wallet.createdAt,
       },
     });
   } catch (error: any) {
@@ -33,14 +53,14 @@ export const createWalletHandler = async (req: Request, res: Response) => {
 };
 
 /**
- * Retrieves wallet information by wallet ID
+ *  Get embedded wallet by id (Privy walletId)
  * @param req - Express request object containing walletId in params
  * @param res - Express response object
  * @returns JSON response with wallet details or error message
  */
 export const getWalletHandler = async (req: Request, res: Response) => {
   try {
-    const { walletId } = req.params;
+    const { walletId } = req.params as { walletId?: string };
 
     if (!walletId) {
       return res.status(400).json({ 
@@ -49,15 +69,15 @@ export const getWalletHandler = async (req: Request, res: Response) => {
       });
     }
 
-    const wallet = await getWallet(walletId);
+    const wallet = await getEmbeddedWallet(walletId);
 
     return res.json({
       success: true,
       wallet: {
         id: wallet.id,
         address: wallet.address,
-        chainType: wallet.chain_type,
-        createdAt: wallet.created_at,
+        chainType: wallet.chainType,
+        createdAt: wallet.createdAt,
       },
     });
   } catch (error: any) {
