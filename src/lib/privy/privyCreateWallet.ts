@@ -36,7 +36,7 @@ export async function createEmbeddedWallet(chain: ChainKey) {
   const authorizationKey = process.env.PRIVY_PUBLIC_AUTHORIZATION_KEY;
 
   if (!authorizationKey) {
-    throw new Error("PRIVY_AUTHORIZATION_KEY is required");
+    throw new Error("PRIVY_PUBLIC_AUTHORIZATION_KEY is required");
   }
 
   const privy = getPrivyClient();
