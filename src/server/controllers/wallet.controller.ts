@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { CHAINS, type ChainKey } from "../../lib/shared/chains.ts";
 import { createEmbeddedWallet, getEmbeddedWallet } from "../../lib/privy/privyCreateWallet.ts";
 
 
@@ -10,10 +11,24 @@ import { createEmbeddedWallet, getEmbeddedWallet } from "../../lib/privy/privyCr
  */
 export const createWalletHandler = async (req: Request, res: Response) => {
   try {
-    const { chain = "sol" } = req.body as { chain?: "sol" | "eth" | "base" | "zora" };
-    
-    if (!["sol", "eth", "base", "zora"].includes(chain)) {
+
+     // Read raw value; treat it as unknown to validate against CHAINS first.
+    const chainRaw: unknown = req.body?.chain ?? "sol";
+
+    // Validate chain name using the central CHAINS registry
+    if (typeof chainRaw !== "string" || !(chainRaw in CHAINS)) {
       return res.status(400).json({ success: false, error: "Invalid chain" });
+    }
+
+    const chain = chainRaw as ChainKey;
+
+    // Embedded wallet scope: only "sol" and "eth" are supported for now.
+    // Return 400 for valid-but-unsupported chains like "base" or "zora".
+    if (chain !== "sol" && chain !== "eth") {
+      return res.status(400).json({
+        success: false,
+        error: 'Embedded wallets are supported only for "sol" and "eth".',
+      });
     }
 
     // Create wallet using Privy authorization key

@@ -31,8 +31,7 @@ const TO_PRIVY: Record<EmbeddedChainKey, "solana" | "ethereum"> = {
 function assertEmbeddedSupported(chain: ChainKey): asserts chain is EmbeddedChainKey {
   if (chain !== "sol" && chain !== "eth") {
     throw new Error(
-      `Embedded wallets are supported only for "sol" and "eth" (got "${chain}"). ` +
-      `If you need "base" or "zora", open a follow-up PR or use EVM server wallet flows.`
+      `Embedded wallets are supported only for "sol" and "eth" (got "${chain}"). ` 
     );
   }
 }
