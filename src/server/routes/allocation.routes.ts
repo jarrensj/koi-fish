@@ -110,11 +110,15 @@ route.post("/api/allocations/enable", async (req, res) => {
   }
   // validation for amountSol
   if (Number(amountSol) < Number(algo.min_alloc_sol)) {
-    // add max limit check
-    if (Number(amountSol) > 1000) {
-      return res.status(400).json({ code: "MAX_ALLOC_EXCEEDED" });
-    }
     return res.status(409).json({ code: "MIN_ALLOC" });
+  }
+  // Add this simple max limit check
+  const MAX_ALLOCATION_SOL = Number(process.env.MAX_ALLOCATION_SOL) || 1000;
+  if (Number(amountSol) > MAX_ALLOCATION_SOL) {
+    return res.status(400).json({
+      code: "AMOUNT_TOO_LARGE",
+      message: `Amount cannot exceed ${MAX_ALLOCATION_SOL} SOL`,
+    });
   }
 
   // upsert (update and insert) allocation: set ON and amount
