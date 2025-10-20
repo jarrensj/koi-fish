@@ -108,7 +108,12 @@ route.post("/api/allocations/enable", async (req, res) => {
   if (algo.status !== "active") {
     return res.status(409).json({ code: "ALGO_PAUSED" });
   }
+  // validation for amountSol
   if (Number(amountSol) < Number(algo.min_alloc_sol)) {
+    // add max limit check
+    if (Number(amountSol) > 1000) {
+      return res.status(400).json({ code: "MAX_ALLOC_EXCEEDED" });
+    }
     return res.status(409).json({ code: "MIN_ALLOC" });
   }
 
