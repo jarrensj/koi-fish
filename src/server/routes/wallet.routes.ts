@@ -8,7 +8,7 @@ const route = Router();
 
 /**
  * POST /api/wallet/create
- * Body: { chainType?: "ethereum" | "solana" }
+ * BODY { chain?: "sol"|"eth"|"base"|"zora" }
  * Creates a new wallet using PRIVY_AUTHORIZATION_KEY and returns address for frontend
  */
 route.post("/api/wallet/create", createWalletHandler);
