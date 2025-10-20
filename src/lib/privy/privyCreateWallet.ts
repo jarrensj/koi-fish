@@ -33,7 +33,7 @@ function toPrivyChain(chain: ChainKey): "solana" | "ethereum" {
  * Example: chain="sol" | "eth" | "base" | "zora"
  */
 export async function createEmbeddedWallet(chain: ChainKey) {
-  const authorizationKey = process.env.PRIVY_AUTHORIZATION_KEY;
+  const authorizationKey = process.env.PRIVY_PUBLIC_AUTHORIZATION_KEY;
 
   if (!authorizationKey) {
     throw new Error("PRIVY_AUTHORIZATION_KEY is required");
