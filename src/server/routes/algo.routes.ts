@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { postCadenceTrader } from "../controllers/algo-controller/index.ts";
+import { supabase } from "../db.ts"; // ensure this exists and exports a supabase client
 
 const route = Router();
 
@@ -17,6 +18,22 @@ const route = Router();
 // * }
 // */
 route.post("/api/algo/cadence-trader", postCadenceTrader);
+
+// GET /api/algos — list active algos for the bot
+route.get("/api/algos", async (_req, res) => {
+  const { data, error } = await supabase
+    .from("algos")
+    .select("code, name, desc, status, min_alloc_sol, fee_bps")
+    .eq("status", "active")
+    .order("code", { ascending: true });
+
+  if (error) {
+    console.error("[/api/algos] DB_ERROR:", error);
+    return res.status(500).json({ code: "DB_ERROR" });
+  }
+  return res.json(data ?? []);
+});
+
 
 
 export default route;
