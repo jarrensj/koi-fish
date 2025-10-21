@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { CHAINS, type ChainKey } from "../../lib/shared/chains.ts";
-import { createEmbeddedWallet, getEmbeddedWallet } from "../../lib/privy/privyCreateWallet.ts";
+import { createUserEmbeddedWallet, getEmbeddedWalletById } from "../../lib/privy/wallets.ts";
 
 
 /**
@@ -11,6 +11,12 @@ import { createEmbeddedWallet, getEmbeddedWallet } from "../../lib/privy/privyCr
  */
 export const createWalletHandler = async (req: Request, res: Response) => {
   try {
+
+    // Ideally derive userId from your auth/session middleware; for now accept body.userId
+    const userId = (req.body?.userId as string | undefined)?.trim();
+    if (!userId) {
+      return res.status(400).json({ success: false, error: "userId is required" });
+    }
 
      // Read raw value; treat it as unknown to validate against CHAINS first.
     const chainRaw: unknown = req.body?.chain ?? "sol";
@@ -32,7 +38,7 @@ export const createWalletHandler = async (req: Request, res: Response) => {
     }
 
     // Create wallet using Privy authorization key
-    const wallet = await  createEmbeddedWallet(chain);
+    const wallet = await  createUserEmbeddedWallet(userId,chain);
 
     return res.json({
       success: true,
@@ -53,23 +59,17 @@ export const createWalletHandler = async (req: Request, res: Response) => {
 };
 
 /**
- *  Get embedded wallet by id (Privy walletId)
- * @param req - Express request object containing walletId in params
- * @param res - Express response object
- * @returns JSON response with wallet details or error message
+ * Get embedded wallet by Privy walletId (path param)
+ * route: GET /api/wallets/:walletId
  */
 export const getWalletHandler = async (req: Request, res: Response) => {
   try {
     const { walletId } = req.params as { walletId?: string };
-
     if (!walletId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "walletId is required" 
-      });
+      return res.status(400).json({ success: false, error: "walletId is required" });
     }
 
-    const wallet = await getEmbeddedWallet(walletId);
+    const wallet = await getEmbeddedWalletById(walletId);
 
     return res.json({
       success: true,
@@ -82,9 +82,9 @@ export const getWalletHandler = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error("Error getting wallet:", error);
-    return res.status(500).json({ 
-      success: false, 
-      error: error?.message || "Failed to get wallet" 
+    return res.status(500).json({
+      success: false,
+      error: error?.message || "Failed to get wallet",
     });
   }
 };

@@ -1,51 +1,45 @@
+// src/lib/solana/solWallet.ts
 /**
  * Purpose:
  * - Provide a shared Solana RPC Connection (singleton).
- * - Load a wallet Keypair from environment variables.
- * - Provide utilities for working with encrypted wallet secrets.
- * - If/when you store Sol secrets in DB, mirror your EVM decrypt flow here.
+ * - (Optional) helpers: CAIP-2 for Privy, confirmation/simulation utils.
+ * - NO server-side key management here. Privy signs on behalf of the user.
  */
 
-import { Connection, Keypair } from "@solana/web3.js";
-import bs58 from "bs58";
+import { Connection, Finality } from "@solana/web3.js";
 
 let _conn: Connection | null = null;
 
-export function getConnection(rpcUrl?: string): Connection {
-  if (rpcUrl) return new Connection(rpcUrl, "confirmed");
+export function getConnection(rpcUrl?: string, commitment: Finality = "confirmed"): Connection {
+  if (rpcUrl) return new Connection(rpcUrl, commitment);
   if (_conn) return _conn;
 
   const url = process.env.SOLANA_RPC_URL;
   if (!url) throw new Error("SOLANA_RPC_URL is required");
 
-  _conn = new Connection(url, "confirmed");
+  _conn = new Connection(url, commitment);
   return _conn;
 }
 
-export function loadKeypair(): Keypair {
-  const solKey = process.env.SOL_WALLET_SECRET_KEY?.trim();
-  const solJson = process.env.SOL_WALLET_SECRET_KEY_JSON?.trim();
+/**
+ * Resolve CAIP-2 chain id for Privy.
+ * mainnet: solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp
+ * devnet:  solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1
+ * testnet: solana:4uhcVJyU9P8JkvQyS88uRDiswHXSCkY3z
+ */
+export function getSolanaCaip2(): string {
+  const net = (process.env.SOLANA_NETWORK ?? "mainnet").toLowerCase();
+  if (net === "devnet") return "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1";
+  if (net === "testnet") return "solana:4uhcVJyU9P8JkvQyS88uRDiswHXSCkY3z";
+  return "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
+}
 
-  if (solKey) {
-    const bytes = bs58.decode(solKey);
-    if (bytes.length !== 64) {
-      throw new Error(`Base58 secret must decode to 64 bytes`);
-    }
-    return Keypair.fromSecretKey(bytes);
-  }
-
-  if (solJson) {
-    try {
-      const arr = JSON.parse(solJson) as number[];
-      const bytes = Uint8Array.from(arr);
-      if (bytes.length !== 64) {
-        throw new Error(`JSON secret must be 64 bytes`);
-      }
-      return Keypair.fromSecretKey(bytes);
-    } catch (error) {
-      throw new Error("Failed to load keypair from SOL_WALLET_SECRET_KEY_JSON");
-    }
-  }
-
-  throw new Error("Set SOL_WALLET_SECRET_KEY or SOL_WALLET_SECRET_KEY_JSON in .env");
+/** Optional: confirm a signature if you want server-side assurance. */
+export async function confirmSig(signature: string, commitment: Finality = "confirmed") {
+  const conn = getConnection(undefined, commitment);
+  const latest = await conn.getLatestBlockhash(commitment);
+  return conn.confirmTransaction(
+    { signature, blockhash: latest.blockhash, lastValidBlockHeight: latest.lastValidBlockHeight },
+    commitment
+  );
 }

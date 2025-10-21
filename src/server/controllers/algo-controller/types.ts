@@ -1,10 +1,14 @@
-import type { CadenceTraderRequest } from "../../../lib/shared/types.ts";
+/**
+ * Handler input types derived from the normalized request type,
+ * with a branded (optional) userId for Privy.
+ */
+import type { CadenceTraderRequest, PrivyUserId } from "../../../lib/shared/types.ts";
 
-/** Exact chain literals */
-export type ChainKey = "sol" | "eth" | "base" | "zora";
-
-/** Narrowed inputs for each handler, derived from your shared request type */
+// Common fields from the normalized payload, minus the chain discriminator
 type Common = Omit<CadenceTraderRequest, "blockchain">;
 
-export type InputSol = Common & { blockchain: "sol" };
-export type InputEvm = Common & { blockchain: "eth" | "base" | "zora" };
+// Re-brand userId to PrivyUserId while keeping it optional
+type CommonBranded = Omit<Common, "userId"> & { userId?: PrivyUserId };
+
+export type InputSol = CommonBranded & { blockchain: "sol" };
+export type InputEvm = CommonBranded & { blockchain: "eth" | "base" | "zora" };

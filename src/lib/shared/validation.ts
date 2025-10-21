@@ -1,11 +1,12 @@
 /**
  * zod schema for POST /api/algo/cadence-trader
- * - Validates required fields
- * - Light formatting checks for addresses/symbols
+ * - Back-compat: accepts legacy fields (public_wallet, priorityFee)
+ * - Privy-first: supports userId for server-side signing via Privy
+ * - Normalizes to a single shape handlers can rely on
  */
-import { z, type ZodError} from "zod";
+import { z, type ZodError } from "zod";
 
-// Very light heuristics for tokens: allow native symbols, 0x-addresses, or Solana base58 mints
+// Very light heuristics for tokens: native, EVM address, or Solana base58 mint
 const tokenLike = z
   .string()
   .trim()
@@ -19,29 +20,54 @@ const tokenLike = z
   }, { message: "Expected native symbol (SOL/ETH), EVM 0x-address, or Solana base58 mint" });
 
 export const CadenceTraderSchema = z.object({
-  public_wallet: z.string().trim().min(4, "public_wallet required"),
+  // Privy-first
+  userId: z.string().trim().min(1).optional(),
+
+  // Legacy / convenience (normalize to publicWallet)
+  publicWallet: z.string().trim().min(32).optional(),
+  public_wallet: z.string().trim().min(32).optional(),
+
+  blockchain: z.enum(["sol", "eth", "base", "zora"]),
   sellToken: tokenLike,
   buyToken: tokenLike,
-  blockchain: z.enum(["sol", "eth", "base", "zora"]),
   amount: z.number().positive("amount must be > 0"),
+
+  // Slippage & fees
+  slippageBps: z.number().int().min(1).max(10_000).optional(),
+  priorityFeeMicrolamports: z.number().int().nonnegative().optional(), // new canonical
+  priorityFee: z.number().int().nonnegative().optional(),              // legacy alias
+
+  // Misc
+  idempotencyKey: z.string().trim().min(1).optional(),
+  simulate: z.boolean().optional(),
   dryRun: z.boolean().optional(),
-  slippageBps: z.number().int().min(1).max(5000).optional(),
-  priorityFee: z.number().nonnegative().optional(),
-}).refine(
-  (data) => data.sellToken.toLowerCase() !== data.buyToken.toLowerCase(),
-  {
-    message: "sellToken and buToken must be different",
-    path: ["buyToken"], // This will attach the error to the buyToken field
-  }
+})
+.transform((raw) => {
+  // normalize legacy fields → canonical names
+  const publicWallet = raw.publicWallet ?? raw.public_wallet ?? undefined;
+  const priorityFeeMicrolamports = raw.priorityFeeMicrolamports ?? raw.priorityFee ?? 0;
+
+  return {
+    ...raw,
+    publicWallet,
+    priorityFeeMicrolamports,
+  };
+})
+.refine(
+  (v) => !!v.userId || !!v.publicWallet,
+  { message: "Provide either userId (Privy) or publicWallet.", path: ["userId"] }
+)
+.refine(
+  (v) => v.sellToken.toLowerCase() !== v.buyToken.toLowerCase(),
+  { message: "sellToken and buyToken must be different", path: ["buyToken"] }
 );
 
-// export types to frontend for autocomplete
-export type CadenceTraderInput = z.infer<typeof CadenceTraderSchema>;
+// Inferred, fully normalized payload type (source of truth)
+export type CadenceTraderPayload = z.infer<typeof CadenceTraderSchema>;
 
-// Format zod issues into a small, client-friendly array 
+// Small helper for client-friendly error formatting
 export function formatZodError(err: ZodError) {
-  type Issue = (typeof err.issues)[number]; // infer the element type from the value
-  return err.issues.map((i: Issue) => ({
+  return err.issues.map((i) => ({
     path: i.path.join("."),
     message: i.message,
   }));
