@@ -25,7 +25,7 @@ export async function loadEvmWallet(
   const rpcUrl = requireEnv(CHAINS[chain].rpcEnv!);
   const provider = new JsonRpcProvider(rpcUrl);
 
-  const isDevelopment = (process.env.NODE_ENV || "devlopment") !== "production";
+  const isDevelopment = process.env.NODE_ENV !== "production";
 
   if(isDevelopment) {
     console.debug(`[Wallet] Loading EVM wallet from env for ${chain}`);
