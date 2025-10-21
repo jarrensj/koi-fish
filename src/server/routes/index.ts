@@ -4,6 +4,7 @@ import algoRoutes from "./algo.routes.ts";
 import walletRoutes from "./wallet.routes.ts";
 import referralRoutes from "./referrals.routes.ts"
 import allocationRoutes from "./allocation.routes.ts";
+import referralsRoutes from "./referrals.routes.ts";
 
 const router = Router();
 
@@ -12,5 +13,6 @@ router.use(algoRoutes);
 router.use(walletRoutes);
 router.use(referralRoutes);
 router.use(allocationRoutes);
+router.use(referralsRoutes);
 
 export default router;
