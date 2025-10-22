@@ -9,9 +9,13 @@ import { supabase } from "../db.ts";
  */
 export const getAllocationsHandler = async (req: Request, res: Response) => {
   try {
+    // Use authenticated user's telgramId from JWT token
     const telegramId = String(req.query.telegramId || "");
     if (!telegramId) {
-      return res.status(400).json({ code: "BAD_INPUT" });
+      return res.status(401).json({
+        code: "UNAUTHORIZED",
+        message: "User not authenticated.",
+      });
     }
 
     // find user
@@ -19,7 +23,7 @@ export const getAllocationsHandler = async (req: Request, res: Response) => {
       .from("users")
       .select("id")
       .eq("telegram_id", telegramId)
-      .single();
+      .maybeSingle();
     if (uerr || !user) {
       console.error("[/api/allocations] USER_CREATION_ERROR", uerr);
       return res.status(404).json({
@@ -77,9 +81,21 @@ export const getAllocationsHandler = async (req: Request, res: Response) => {
  */
 export const enableAllocationHandler = async (req: Request, res: Response) => {
   try {
-    const { telegramId, algoId, amountSol } = req.body || {};
-    if (!telegramId || !algoId || !(Number(amountSol) > 0)) {
-      return res.status(400).json({ code: "BAD_INPUT" });
+    // Use authenticated user's telegramId from JWT token
+    const telegramId = req.user?.telegramId;
+    if (!telegramId) {
+      return res.status(401).json({
+        code: "UNAUTHORIZED",
+        message: "User not authenticated.",
+      });
+    }
+
+    const { algoId, amountSol } = req.body || {};
+    if (!algoId || !(Number(amountSol) > 0)) {
+      return res.status(400).json({
+        code: "BAD_INPUT",
+        message: "algoId and amountSol are required.",
+      });
     }
 
     // resolve user (ensure row exists)
@@ -87,7 +103,7 @@ export const enableAllocationHandler = async (req: Request, res: Response) => {
       .from("users")
       .select("id")
       .eq("telegram_id", telegramId)
-      .single();
+      .maybeSingle();
 
     let userId = userExisting?.id as string | undefined;
     if (!userId) {
@@ -202,16 +218,28 @@ export const enableAllocationHandler = async (req: Request, res: Response) => {
  */
 export const disableAllocationHandler = async (req: Request, res: Response) => {
   try {
-    const { telegramId, algoId } = req.body || {};
-    if (!telegramId || !algoId) {
-      return res.status(400).json({ code: "BAD_INPUT" });
+    // Use authenticated user's telegramId from JWT token
+    const telegramId = req.user?.telegramId;
+    if (!telegramId) {
+      return res.status(401).json({
+        code: "UNAUTHORIZED",
+        message: "User not authenticated.",
+      });
+    }
+
+    const { algoId } = req.body || {};
+    if (!algoId) {
+      return res.status(400).json({
+        code: "BAD_INPUT",
+        message: "algoId is required.",
+      });
     }
 
     const { data: user, error: uerr } = await supabase
       .from("users")
       .select("id")
       .eq("telegram_id", telegramId)
-      .single();
+      .maybeSingle();
     if (uerr || !user) {
       console.error("[/api/allocations] USER_CREATION_ERROR", uerr);
       return res.status(404).json({

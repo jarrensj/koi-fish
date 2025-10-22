@@ -4,20 +4,46 @@ import {
   enableAllocationHandler,
   disableAllocationHandler,
 } from "../controllers/allocations.controller.ts";
+import {
+  authenticateToken,
+  validateTelegramId,
+  validateAllocationInput,
+} from "../middleware/auth.ts";
 
 const route = Router();
 
-/** GET /api/allocations?telegramId=123 */
-route.get("/api/allocations", getAllocationsHandler);
+/** GET /api/allocations
+ *  Requires: Authorization header with Bearer token
+ *  Returns: User's allocations (telegramId from JWT token)
+ */
+route.get(
+  "/api/allocations",
+  authenticateToken,
+  validateTelegramId,
+  getAllocationsHandler
+);
 
 /** POST /api/allocations/enable
- *  body: { telegramId: string, algoId: string (code or uuid), amountSol: number }
+ *  Requires: Authorization header with Bearer token
+ *  Body: { algoId: string (code or uuid), amountSol: number }
+ *  Note: telegramId is extracted from JWT token
  */
-route.post("/api/allocations/enable", enableAllocationHandler);
+route.post(
+  "/api/allocations/enable",
+  authenticateToken,
+  validateAllocationInput,
+  enableAllocationHandler
+);
 
 /** POST /api/allocations/disable
- *  body: { telegramId: string, algoId: string (code or uuid) }
+ *  Requires: Authorization header with Bearer token
+ *  Body: { algoId: string (code or uuid) }
+ *  Note: telegramId is extracted from JWT token
  */
-route.post("/api/allocations/disable", disableAllocationHandler);
+route.post(
+  "/api/allocations/disable",
+  authenticateToken,
+  disableAllocationHandler
+);
 
 export default route;

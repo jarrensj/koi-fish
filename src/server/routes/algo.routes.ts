@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { postCadenceTrader } from "../controllers/algo-controller/index.ts";
 import { getAlgosHandler } from "../controllers/algos.controller.ts";
+import { authenticateToken } from "../middleware/auth.ts";
 
 const route = Router();
 
@@ -17,9 +18,12 @@ const route = Router();
 // * priorityFee?: number
 // * }
 // */
-route.post("/api/algo/cadence-trader", postCadenceTrader);
+route.post("/api/algo/cadence-trader", authenticateToken, postCadenceTrader);
 
-// GET /api/algos — list active algos for the bot
-route.get("/api/algos", getAlgosHandler);
+/** GET /api/algos
+ *  Requires: Authorization header with Bearer token
+ *  Returns: List of active algorithms
+ */
+route.get("/api/algos", authenticateToken, getAlgosHandler);
 
 export default route;
