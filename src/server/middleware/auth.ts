@@ -36,16 +36,7 @@ export const authenticateToken = (
     });
   }
 
-  const jwtSecret = process.env.JWT_SECRET;
-  if (!jwtSecret) {
-    console.error("JWT_SECRET not configured");
-    return res.status(500).json({
-      code: "SERVER_ERROR",
-      message: "Server configuration error.",
-    });
-  }
-
-  jwt.verify(token, jwtSecret, (err: any, decoded: any) => {
+  jwt.verify(token, process.env.JWT_SECRET!, (err: any, decoded: any) => {
     if (err) {
       return res.status(403).json({
         code: "INVALID_TOKEN",

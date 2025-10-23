@@ -3,14 +3,14 @@ import { supabase } from "../db.ts";
 
 /**
  * Get user allocations by telegram ID
- * @param req - Express request object with telegramId query parameter
+ * @param req - Express request object (telegramId from JWT token)
  * @param res - Express response object
  * @returns JSON response with user allocations or error message
  */
 export const getAllocationsHandler = async (req: Request, res: Response) => {
   try {
-    // Use authenticated user's telgramId from JWT token
-    const telegramId = String(req.query.telegramId || "");
+    // Use authenticated user's telegramId from JWT token
+    const telegramId = req.user?.telegramId;
     if (!telegramId) {
       return res.status(401).json({
         code: "UNAUTHORIZED",

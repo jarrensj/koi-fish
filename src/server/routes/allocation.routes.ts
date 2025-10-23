@@ -6,7 +6,6 @@ import {
 } from "../controllers/allocations.controller.ts";
 import {
   authenticateToken,
-  validateTelegramId,
   validateAllocationInput,
 } from "../middleware/auth.ts";
 
@@ -19,7 +18,6 @@ const route = Router();
 route.get(
   "/api/allocations",
   authenticateToken,
-  validateTelegramId,
   getAllocationsHandler
 );
 
