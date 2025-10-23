@@ -18,8 +18,20 @@ const tokenLike = z
     return false;
   }, { message: "Expected native symbol (SOL/ETH), EVM 0x-address, or Solana base58 mint" });
 
+
+
+   
+//  * TODO(SECURITY):
+//  * - Revert `public_wallet` to REQUIRED when Privy per-user wallets are integrated.
+//  * - Enforce KOI_API_KEY (or user session) on the route before parsing.
+//  * - Consider rate-limiting by Telegram user / IP to prevent abuse.
+ 
 export const CadenceTraderSchema = z.object({
-  public_wallet: z.string().trim().min(4, "public_wallet required"),
+
+   // DEV: optional for now; PROD: make this required again.
+  // TODO(SECURITY): Make required and validate ownership (must match authenticated user/Privy wallet).
+  public_wallet: z.string().trim().min(4, "public_wallet required").optional(),
+  
   sellToken: tokenLike,
   buyToken: tokenLike,
   blockchain: z.enum(["sol", "eth", "base", "zora"]),

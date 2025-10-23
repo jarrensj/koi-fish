@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import { CHAINS, type ChainKey } from "../../lib/shared/chains.ts";
 import { createEmbeddedWallet, getEmbeddedWallet } from "../../lib/privy/privyCreateWallet.ts";
 
+// can remove used for testing single phatom wallet
+import { getConnection, loadKeypair } from "../../lib/solana/solWallet.ts";
+
 
 /**
  * Creates a new wallet for the specified blockchain chain type
@@ -88,3 +91,21 @@ export const getWalletHandler = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+// can remove used for testing single phatom wallet
+
+export async function getSignerBalance(_req: Request, res: Response) {
+  try {
+    const conn = getConnection();
+    const kp = loadKeypair();
+    const lamports = await conn.getBalance(kp.publicKey, "confirmed");
+    return res.json({
+      success: true,
+      address: kp.publicKey.toBase58(),
+      SOL: lamports / 1e9,
+    });
+  } catch (e: any) {
+    return res.status(400).json({ success: false, error: e?.message || String(e) });
+  }
+}
