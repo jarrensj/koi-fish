@@ -4,6 +4,9 @@ import {
   getWalletHandler
 } from "../controllers/wallet.controller.ts";
 
+// can remove used for testing single phatom wallet
+import { getSignerBalance } from "../controllers/wallet.controller.ts";
+
 const route = Router();
 
 /**
@@ -18,5 +21,8 @@ route.post("/api/wallet/create", createWalletHandler);
  * Retrieves details for a specific wallet
  */
 route.get("/api/wallet/:walletId", getWalletHandler);
+
+// can remove used for testing single phatom wallet
+route.get("/api/wallet/signer-balance", getSignerBalance);
 
 export default route;
