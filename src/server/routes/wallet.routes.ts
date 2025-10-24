@@ -3,6 +3,7 @@ import {
   createWalletHandler,
   getWalletHandler
 } from "../controllers/wallet.controller.ts";
+import { authenticateToken } from "../middleware/auth.ts";
 
 // can remove used for testing single phatom wallet
 import { getSignerBalance } from "../controllers/wallet.controller.ts";
@@ -14,13 +15,13 @@ const route = Router();
  * BODY { chain?: "sol"|"eth"|"base"|"zora" }
  * Creates a new wallet using PRIVY_PUBLIC_AUTHORIZATION_KEY and returns address for frontend
  */
-route.post("/api/wallet/create", createWalletHandler);
+route.post("/api/wallet/create", authenticateToken, createWalletHandler);
 
 /**
  * GET /api/wallet/:walletId
  * Retrieves details for a specific wallet
  */
-route.get("/api/wallet/:walletId", getWalletHandler);
+route.get("/api/wallet/:walletId", authenticateToken, getWalletHandler);
 
 // can remove used for testing single phatom wallet
 route.get("/api/wallet/signer-balance", getSignerBalance);
